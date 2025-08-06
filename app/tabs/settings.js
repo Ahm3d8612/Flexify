@@ -10,18 +10,33 @@ import {
   TextInput,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useThemeContext } from '../context/ThemeContext';
-import getTheme from '../../constants/theme';
+import { useColorScheme } from 'react-native';
+import { auth } from '../../firebase';
+import { useRouter } from 'expo-router';
 
 export default function SettingsScreen() {
-  const {
-    isDarkMode,
-    toggleDarkMode,
-    colorTheme,
-    changeTheme,
-  } = useThemeContext();
+  const router = useRouter();
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const colorScheme = useColorScheme();
 
-  const theme = getTheme(colorTheme, isDarkMode);
+  const toggleDarkMode = () => {
+    setIsDarkMode((prev) => !prev);
+    // Store in AsyncStorage or global context if needed
+  };
+
+  const resetAppData = async () => {
+    Alert.alert('Reset App', 'Are you sure you want to reset all app data?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Reset',
+        style: 'destructive',
+        onPress: async () => {
+          await AsyncStorage.clear();
+          Alert.alert('Data Cleared', 'App data has been reset.');
+        },
+      },
+    ]);
+  };
 
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
@@ -47,74 +62,55 @@ export default function SettingsScreen() {
     setBmiStatus(status);
   };
 
-  const resetData = () => {
-    Alert.alert('Reset All Data', 'Are you sure you want to reset everything?', [
-      {
-        text: 'Cancel',
-        style: 'cancel',
-      },
-      {
-        text: 'Reset',
-        style: 'destructive',
-        onPress: async () => {
-          await AsyncStorage.clear();
-          toggleDarkMode(false);
-          changeTheme('blue');
-          Alert.alert('Data reset successfully');
-        },
-      },
-    ]);
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      router.replace('/');
+    } catch (error) {
+      Alert.alert('Error', error.message);
+    }
   };
 
   return (
-    <ScrollView contentContainerStyle={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Text style={[styles.heading, { color: theme.colors.text }]}>⚙️ Settings</Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.title}>⚙️ Settings</Text>
 
-      <View style={[styles.card, { backgroundColor: theme.colors.card }]}>
-        <Text style={[styles.label, { color: theme.colors.text }]}>🌙 Dark Mode</Text>
+      <View style={styles.card}>
+        <Text style={styles.label}>🌙 Dark Mode</Text>
         <Switch value={isDarkMode} onValueChange={toggleDarkMode} />
       </View>
 
-      <View style={[styles.card, { backgroundColor: theme.colors.card }]}>
-        <Text style={[styles.label, { color: theme.colors.text }]}>🎨 Theme Color</Text>
-        <View style={styles.colorRow}>
-          {['blue', 'green', 'purple', 'orange'].map((themeKey) => (
-            <Button
-              key={themeKey}
-              title={themeKey}
-              color={themeKey === colorTheme ? getTheme(themeKey, isDarkMode).colors.primary : '#ccc'}
-              onPress={() => changeTheme(themeKey)}
-            />
-          ))}
-        </View>
+      <View style={styles.card}>
+        <Text style={styles.label}>🗑️ Reset All App Data</Text>
+        <Button title="Reset" color="red" onPress={resetAppData} />
       </View>
 
-      <View style={[styles.card, { backgroundColor: theme.colors.card }]}>
-        <Text style={[styles.label, { color: theme.colors.text }]}>🧹 Reset App Data</Text>
-        <Button title="Reset All" color={theme.colors.error} onPress={resetData} />
+      <View style={styles.card}>
+        <Text style={styles.label}>🚪 Logout</Text>
+        <Button title="Logout" color="#007bff" onPress={handleLogout} />
       </View>
 
-      <View style={[styles.card, { backgroundColor: theme.colors.card }]}>
-        <Text style={[styles.label, { color: theme.colors.text }]}>📏 BMI Calculator</Text>
+      <View style={styles.card}>
+        <Text style={styles.label}>📏 BMI Calculator</Text>
         <TextInput
           placeholder="Height (cm)"
           keyboardType="numeric"
           value={height}
           onChangeText={setHeight}
-          style={[styles.input, { color: theme.colors.text, borderColor: theme.colors.border }]}
-          placeholderTextColor={theme.colors.text}
+          style={styles.input}
+          placeholderTextColor="#999"
         />
         <TextInput
           placeholder="Weight (kg)"
           keyboardType="numeric"
           value={weight}
           onChangeText={setWeight}
-          style={[styles.input, { color: theme.colors.text, borderColor: theme.colors.border }]}
-          placeholderTextColor={theme.colors.text}
+          style={styles.input}
+          placeholderTextColor="#999"
         />
-        <Button title="Calculate BMI" color={theme.colors.primary} onPress={calculateBMI} />
+        <Button title="Calculate BMI" onPress={calculateBMI} />
         {bmi && (
-          <Text style={{ marginTop: 10, color: theme.colors.text }}>
+          <Text style={{ marginTop: 10 }}>
             Your BMI is <Text style={{ fontWeight: 'bold' }}>{bmi}</Text> ({bmiStatus})
           </Text>
         )}
@@ -126,34 +122,33 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     padding: 24,
+    backgroundColor: '#f9f9f9',
     flexGrow: 1,
+    alignItems: 'center',
   },
-  heading: {
+  title: {
     fontSize: 26,
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
   },
   card: {
-    padding: 20,
-    borderRadius: 12,
+    backgroundColor: '#ffffff',
+    padding: 16,
+    borderRadius: 10,
+    width: '100%',
     marginBottom: 20,
     elevation: 2,
   },
   label: {
     fontSize: 18,
-    fontWeight: '600',
     marginBottom: 10,
-  },
-  colorRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 10,
   },
   input: {
     borderWidth: 1,
     padding: 10,
     marginVertical: 10,
     borderRadius: 8,
+    width: '100%',
   },
 });
