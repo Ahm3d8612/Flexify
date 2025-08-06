@@ -1,3 +1,4 @@
+// ✅ FULL UPDATED CODE
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -9,11 +10,7 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
-// ✅ Fix Swipeable import (most common source of this error)
 import { Swipeable } from 'react-native-gesture-handler';
-
-
-
 import { Picker } from '@react-native-picker/picker';
 import { db, auth } from '../../firebase';
 import { ref, onValue, push, remove, update } from 'firebase/database';
@@ -27,7 +24,7 @@ const COLORS = {
 };
 
 export default function RoutinesScreen() {
-  const [userId, setUserId] = useState('dummyUserId123'); // ✅ Declare here
+  const [userId, setUserId] = useState('dummyUserId123');
   const [routines, setRoutines] = useState({});
   const [name, setName] = useState('');
   const [exercises, setExercises] = useState('');
@@ -52,11 +49,10 @@ export default function RoutinesScreen() {
     return 'Default';
   };
 
-
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       const uid = user?.uid || 'dummyUserId123';
-      setUserId(uid); // ✅ Only set after state is initialized
+      setUserId(uid);
 
       const routinesRef = ref(db, `routines/${uid}`);
       onValue(routinesRef, (snapshot) => {
@@ -121,7 +117,7 @@ export default function RoutinesScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView contentContainerStyle={styles.scrollContainer}>
       <Text style={styles.heading}>📝 Add / Edit Routine</Text>
 
       <View style={styles.formCard}>
@@ -147,11 +143,10 @@ export default function RoutinesScreen() {
         <Button title={editingKey ? 'Update Routine' : 'Add Routine'} onPress={handleAddOrUpdate} />
       </View>
 
-      {/* 🧠 Filter UI moved up for better visibility */}
       <Text style={styles.subheading}>🧠 Filter Predefined Exercises</Text>
       <View style={styles.filtersContainer}>
         <View style={styles.filterRow}>
-          <Text>Type:</Text>
+          <Text style={styles.label}>Type:</Text>
           <Picker
             selectedValue={selectedType}
             style={styles.picker}
@@ -165,7 +160,7 @@ export default function RoutinesScreen() {
         </View>
 
         <View style={styles.filterRow}>
-          <Text>Equipment:</Text>
+          <Text style={styles.label}>Equipment:</Text>
           <Picker
             selectedValue={selectedEquipment}
             style={styles.picker}
@@ -221,9 +216,13 @@ export default function RoutinesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 50, backgroundColor: '#f9f9f9' },
-  heading: { fontSize: 24, fontWeight: 'bold', marginBottom: 12, textAlign: 'center' },
-  subheading: { fontSize: 20, fontWeight: '600', marginTop: 20 },
+  scrollContainer: {
+    padding: 20,
+    backgroundColor: '#f9f9f9',
+    paddingBottom: 80,
+  },
+  heading: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
+  subheading: { fontSize: 20, fontWeight: '600', marginTop: 30, marginBottom: 10 },
   formCard: {
     backgroundColor: '#fff',
     padding: 16,
@@ -235,8 +234,26 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ccc',
     padding: 10,
-    marginBottom: 10,
+    marginBottom: 12,
     borderRadius: 5,
+  },
+  filtersContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 30,
+    elevation: 2,
+  },
+  filterRow: {
+    marginBottom: 12,
+  },
+  label: {
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  picker: {
+    backgroundColor: '#f0f0f0',
+    borderRadius: 6,
   },
   routineCard: {
     padding: 15,
@@ -254,18 +271,6 @@ const styles = StyleSheet.create({
   },
   deleteText: { color: 'white', fontWeight: 'bold' },
   typeHeading: { fontSize: 18, fontWeight: 'bold', marginTop: 16 },
-  filtersContainer: { marginBottom: 10 },
-  filterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginVertical: 8,
-  },
-  picker: {
-    flex: 1,
-    height: 40,
-    marginLeft: 10,
-  },
   exerciseCard: {
     backgroundColor: '#f0f0f0',
     padding: 12,

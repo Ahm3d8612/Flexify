@@ -1,24 +1,41 @@
-const COLORS = {
-  primary: '#5A67D8',
-  secondary: '#7F9CF5',
-  background: '#F7FAFC',
-  inputBackground: '#EDF2F7',
-  text: '#2D3748',
-  buttonText: '#FFFFFF',
-  link: '#3182CE',
-  error: '#E53E3E',
-    Strength: '#FFB6C1',
-  Cardio: '#87CEFA',
-  Core: '#90EE90',
-  Default: '#e0e0e0',
+const baseColors = {
+  blue: {
+    primary: '#007AFF',
+    secondary: '#005BBB',
+  },
+  green: {
+    primary: '#34C759',
+    secondary: '#248A3D',
+  },
+  purple: {
+    primary: '#AF52DE',
+    secondary: '#8E44AD',
+  },
+  orange: {
+    primary: '#FF9500',
+    secondary: '#CC7A00',
+  },
 };
 
-const FONTS = {
-  title: 28,
-  input: 16,
-  link: 14,
+const getTheme = (colorTheme = 'blue', isDarkMode = false) => {
+  const selected = baseColors[colorTheme] || baseColors.blue;
+
+  return {
+    colors: {
+      primary: selected.primary,
+      secondary: selected.secondary,
+      background: isDarkMode ? '#121212' : '#FFFFFF',
+      card: isDarkMode ? '#1F1F1F' : '#FFFFFF',
+      text: isDarkMode ? '#FFFFFF' : '#000000',
+      border: isDarkMode ? '#272727' : '#DDDDDD',
+      error: '#FF3B30',
+    },
+    fonts: {
+      title: 24,
+      subtitle: 18,
+      text: 16,
+    },
+  };
 };
 
-
-
-export { COLORS, FONTS };
+export default getTheme;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -9,32 +9,18 @@ import {
   ScrollView,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useColorScheme } from 'react-native';
+import { useThemeContext } from '../context/ThemeContext';
+import getTheme from '../../constants/theme';
 
 export default function SettingsScreen() {
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [colorTheme, setColorTheme] = useState('blue');
+  const {
+    isDarkMode,
+    toggleDarkMode,
+    colorTheme,
+    changeTheme,
+  } = useThemeContext();
 
-  useEffect(() => {
-    const loadPreferences = async () => {
-      const darkMode = await AsyncStorage.getItem('darkMode');
-      const theme = await AsyncStorage.getItem('colorTheme');
-      if (darkMode !== null) setIsDarkMode(darkMode === 'true');
-      if (theme !== null) setColorTheme(theme);
-    };
-    loadPreferences();
-  }, []);
-
-  const toggleDarkMode = async () => {
-    const newValue = !isDarkMode;
-    setIsDarkMode(newValue);
-    await AsyncStorage.setItem('darkMode', newValue.toString());
-  };
-
-  const changeTheme = async (theme) => {
-    setColorTheme(theme);
-    await AsyncStorage.setItem('colorTheme', theme);
-  };
+  const theme = getTheme(colorTheme, isDarkMode);
 
   const resetData = () => {
     Alert.alert('Reset All Data', 'Are you sure you want to reset everything?', [
@@ -47,8 +33,8 @@ export default function SettingsScreen() {
         style: 'destructive',
         onPress: async () => {
           await AsyncStorage.clear();
-          setIsDarkMode(false);
-          setColorTheme('blue');
+          toggleDarkMode(false);
+          changeTheme('blue');
           Alert.alert('Data reset successfully');
         },
       },
@@ -56,31 +42,31 @@ export default function SettingsScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.heading}>⚙️ Settings</Text>
+    <ScrollView contentContainerStyle={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <Text style={[styles.heading, { color: theme.colors.text }]}>⚙️ Settings</Text>
 
-      <View style={styles.card}>
-        <Text style={styles.label}>🌙 Dark Mode</Text>
+      <View style={[styles.card, { backgroundColor: theme.colors.card }]}>
+        <Text style={[styles.label, { color: theme.colors.text }]}>🌙 Dark Mode</Text>
         <Switch value={isDarkMode} onValueChange={toggleDarkMode} />
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.label}>🎨 Theme Color</Text>
+      <View style={[styles.card, { backgroundColor: theme.colors.card }]}>
+        <Text style={[styles.label, { color: theme.colors.text }]}>🎨 Theme Color</Text>
         <View style={styles.colorRow}>
-          {['blue', 'green', 'purple', 'orange'].map((theme) => (
+          {['blue', 'green', 'purple', 'orange'].map((themeKey) => (
             <Button
-              key={theme}
-              title={theme}
-              color={theme === colorTheme ? theme : '#ccc'}
-              onPress={() => changeTheme(theme)}
+              key={themeKey}
+              title={themeKey}
+              color={themeKey === colorTheme ? getTheme(themeKey, isDarkMode).colors.primary : '#ccc'}
+              onPress={() => changeTheme(themeKey)}
             />
           ))}
         </View>
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.label}>🧹 Reset App Data</Text>
-        <Button title="Reset All" color="red" onPress={resetData} />
+      <View style={[styles.card, { backgroundColor: theme.colors.card }]}>
+        <Text style={[styles.label, { color: theme.colors.text }]}>🧹 Reset App Data</Text>
+        <Button title="Reset All" color={theme.colors.error} onPress={resetData} />
       </View>
     </ScrollView>
   );
@@ -89,7 +75,7 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     padding: 24,
-    backgroundColor: '#f5f5f5',
+    flexGrow: 1,
   },
   heading: {
     fontSize: 26,
@@ -98,7 +84,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   card: {
-    backgroundColor: '#fff',
     padding: 20,
     borderRadius: 12,
     marginBottom: 20,

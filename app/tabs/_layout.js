@@ -1,12 +1,22 @@
 // app/tabs/_layout.js
 import { Tabs } from 'expo-router';
+import { useThemeContext } from '../context/ThemeContext';
+import getTheme from '../../constants/theme';
 
 export default function TabsLayout() {
+  const { isDarkMode, colorTheme } = useThemeContext();
+  const theme = getTheme(colorTheme, isDarkMode);
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#007AFF',
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: theme.colors.text,
+        tabBarStyle: {
+          backgroundColor: theme.colors.background,
+          borderTopColor: theme.colors.border,
+        },
         tabBarLabelStyle: { fontSize: 14 },
       }}
     >
