@@ -1,6 +1,14 @@
-// app/tabs/settings.js
 import React, { useState } from 'react';
-import { View, Text, Switch, Button, StyleSheet, Alert, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  Switch,
+  Button,
+  Alert,
+  StyleSheet,
+  ScrollView,
+  TextInput,
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from 'react-native';
 import { auth } from '../../firebase';
@@ -13,7 +21,7 @@ export default function SettingsScreen() {
 
   const toggleDarkMode = () => {
     setIsDarkMode((prev) => !prev);
-    // Here, you could store this preference in AsyncStorage or Context
+    // Store in AsyncStorage or global context if needed
   };
 
   const resetAppData = async () => {
@@ -28,6 +36,30 @@ export default function SettingsScreen() {
         },
       },
     ]);
+  };
+
+  const [height, setHeight] = useState('');
+  const [weight, setWeight] = useState('');
+  const [bmi, setBmi] = useState(null);
+  const [bmiStatus, setBmiStatus] = useState('');
+
+  const calculateBMI = () => {
+    const h = parseFloat(height) / 100;
+    const w = parseFloat(weight);
+    if (!h || !w) {
+      Alert.alert('Please enter valid height and weight.');
+      return;
+    }
+    const bmiValue = (w / (h * h)).toFixed(1);
+    setBmi(bmiValue);
+
+    let status = '';
+    if (bmiValue < 18.5) status = 'Underweight';
+    else if (bmiValue < 24.9) status = 'Normal';
+    else if (bmiValue < 29.9) status = 'Overweight';
+    else status = 'Obese';
+
+    setBmiStatus(status);
   };
 
   const handleLogout = async () => {
@@ -57,6 +89,32 @@ export default function SettingsScreen() {
         <Text style={styles.label}>🚪 Logout</Text>
         <Button title="Logout" color="#007bff" onPress={handleLogout} />
       </View>
+
+      <View style={styles.card}>
+        <Text style={styles.label}>📏 BMI Calculator</Text>
+        <TextInput
+          placeholder="Height (cm)"
+          keyboardType="numeric"
+          value={height}
+          onChangeText={setHeight}
+          style={styles.input}
+          placeholderTextColor="#999"
+        />
+        <TextInput
+          placeholder="Weight (kg)"
+          keyboardType="numeric"
+          value={weight}
+          onChangeText={setWeight}
+          style={styles.input}
+          placeholderTextColor="#999"
+        />
+        <Button title="Calculate BMI" onPress={calculateBMI} />
+        {bmi && (
+          <Text style={{ marginTop: 10 }}>
+            Your BMI is <Text style={{ fontWeight: 'bold' }}>{bmi}</Text> ({bmiStatus})
+          </Text>
+        )}
+      </View>
     </ScrollView>
   );
 }
@@ -85,5 +143,12 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 18,
     marginBottom: 10,
+  },
+  input: {
+    borderWidth: 1,
+    padding: 10,
+    marginVertical: 10,
+    borderRadius: 8,
+    width: '100%',
   },
 });
