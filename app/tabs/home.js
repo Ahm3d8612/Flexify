@@ -1,8 +1,10 @@
-// app/home.js
+
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Button, ScrollView } from 'react-native';
-import { auth } from '../../firebase';
-import 'react-native-gesture-handler';
+import { View, Text, StyleSheet, Button, ScrollView, ActivityIndicator } from 'react-native';
+import { auth, db } from '../../firebase';
+import { ref, onValue } from 'firebase/database';
+import { useThemeContext } from '../context/ThemeContext';
+import getTheme from '../../constants/theme';
 
 const quotes = [
   "🏋️‍♂️ Push yourself because no one else is going to do it for you.",
@@ -23,12 +25,26 @@ const tips = [
 
 export default function HomeScreen() {
   const user = auth.currentUser;
+  const { isDarkMode, colorTheme } = useThemeContext();
+  const theme = getTheme(colorTheme, isDarkMode);
+
   const [quote, setQuote] = useState('');
   const [tip, setTip] = useState('');
+  const [exercises, setExercises] = useState({});
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     showRandomQuote();
     showRandomTip();
+
+    // Load predefined exercises
+    const exercisesRef = ref(db, 'predefinedExercises');
+    const unsub = onValue(exercisesRef, (snapshot) => {
+      const data = snapshot.val() || {};
+      setExercises(data);
+      setLoading(false);
+    });
+    return () => unsub();
   }, []);
 
   const showRandomQuote = () => {
@@ -42,28 +58,52 @@ export default function HomeScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>
+    <ScrollView
+      contentContainerStyle={[
+        styles.container,
+        { backgroundColor: theme.colors.background },
+      ]}
+    >
+      <Text style={[styles.title, { color: theme.colors.text }]}>
         {user?.email ? `Welcome ${user.email} 🎉` : "Welcome to Flexify 🎉"}
       </Text>
 
-      <View style={styles.quoteCard}>
-        <Text style={styles.quoteText}>{quote}</Text>
-        <Button title="New Quote" onPress={showRandomQuote} />
+      {/* Quote Card */}
+      <View style={[styles.quoteCard, { backgroundColor: theme.colors.card }]}>
+        <Text style={[styles.quoteText, { color: theme.colors.subtext }]}>{quote}</Text>
+        <Button title="New Quote" onPress={showRandomQuote} color={theme.colors.primary} />
       </View>
 
-      <View style={styles.tipCard}>
-        <Text style={styles.tipTitle}>💡 Daily Fitness Tip</Text>
-        <Text style={styles.tipText}>{tip}</Text>
-        <Button title="Another Tip" onPress={showRandomTip} />
+      {/* Tip Card */}
+      <View style={[styles.tipCard, { backgroundColor: theme.colors.card }]}>
+        <Text style={[styles.tipTitle, { color: theme.colors.text }]}>💡 Daily Fitness Tip</Text>
+        <Text style={[styles.tipText, { color: theme.colors.subtext }]}>{tip}</Text>
+        <Button title="Another Tip" onPress={showRandomTip} color={theme.colors.primary} />
       </View>
 
-      <View style={styles.infoCard}>
-        <Text style={styles.infoTitle}>📊 Track Your Progress</Text>
-        <Text style={styles.infoText}>
-          Go to the Routines tab to log and review your workouts.
-        </Text>
-      </View>
+      {/* Predefined Exercises Section */}
+      {loading ? (
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+        </View>
+      ) : (
+        Object.keys(exercises).map((bodyPart) => (
+          <View key={bodyPart} style={[styles.card, { backgroundColor: theme.colors.card }]}>
+            <Text style={[styles.bodyPart, { color: theme.colors.primary }]}>{bodyPart}</Text>
+            {exercises[bodyPart].map((exercise, index) => (
+              <View key={index} style={styles.exerciseBox}>
+                <Text style={[styles.exerciseName, { color: theme.colors.text }]}>{exercise.name}</Text>
+                <Text style={[styles.exerciseDetail, { color: theme.colors.subtext }]}>
+                  Type: {exercise.type}
+                </Text>
+                <Text style={[styles.exerciseDetail, { color: theme.colors.subtext }]}>
+                  Equipment: {exercise.equipment}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ))
+      )}
     </ScrollView>
   );
 }
@@ -71,7 +111,6 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     padding: 24,
-    backgroundColor: '#f5f5f5',
     flexGrow: 1,
     alignItems: 'center',
   },
@@ -82,7 +121,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   quoteCard: {
-    backgroundColor: '#d0f0c0',
     padding: 20,
     borderRadius: 12,
     marginBottom: 20,
@@ -96,7 +134,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   tipCard: {
-    backgroundColor: '#e3f2fd',
     padding: 20,
     borderRadius: 12,
     marginBottom: 20,
@@ -113,20 +150,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 10,
   },
-  infoCard: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 10,
-    marginVertical: 10,
-    width: '100%',
-    elevation: 2,
-  },
-  infoTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  infoText: {
-    fontSize: 14,
-    marginTop: 6,
-  },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  card: { marginBottom: 16, borderRadius: 12, padding: 16, elevation: 3, width: '100%' },
+  bodyPart: { fontSize: 20, fontWeight: '800', marginBottom: 10 },
+  exerciseBox: { marginBottom: 12, paddingLeft: 8 },
+  exerciseName: { fontSize: 16, fontWeight: '700' },
+  exerciseDetail: { fontSize: 14 },
 });

@@ -1,5 +1,8 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { View, Text } from 'react-native';
+import getTheme from '../../constants/theme';
 
 const ThemeContext = createContext();
 
@@ -8,24 +11,23 @@ export const ThemeProvider = ({ children }) => {
   const [colorTheme, setColorTheme] = useState('blue');
 
   useEffect(() => {
-    const load = async () => {
+    (async () => {
       const dark = await AsyncStorage.getItem('darkMode');
       const theme = await AsyncStorage.getItem('colorTheme');
       if (dark !== null) setIsDarkMode(dark === 'true');
       if (theme !== null) setColorTheme(theme);
-    };
-    load();
+    })();
   }, []);
 
   const toggleDarkMode = async () => {
-    const val = !isDarkMode;
-    setIsDarkMode(val);
-    await AsyncStorage.setItem('darkMode', val.toString());
+    const next = !isDarkMode;
+    setIsDarkMode(next);
+    await AsyncStorage.setItem('darkMode', String(next));
   };
 
-  const changeTheme = async (theme) => {
-    setColorTheme(theme);
-    await AsyncStorage.setItem('colorTheme', theme);
+  const changeTheme = async (t) => {
+    setColorTheme(t);
+    await AsyncStorage.setItem('colorTheme', t);
   };
 
   return (
@@ -36,3 +38,21 @@ export const ThemeProvider = ({ children }) => {
 };
 
 export const useThemeContext = () => useContext(ThemeContext);
+
+// Convenience hook (colors only)
+export const useThemeColors = () => {
+  const { isDarkMode, colorTheme } = useThemeContext();
+  const theme = getTheme(colorTheme, isDarkMode);
+  return theme.colors;
+};
+
+// Themed primitives (drop-in)
+export const ThemedView = ({ style, ...rest }) => {
+  const colors = useThemeColors();
+  return <View style={[{ backgroundColor: colors.background }, style]} {...rest} />;
+};
+
+export const ThemedText = ({ style, ...rest }) => {
+  const colors = useThemeColors();
+  return <Text style={[{ color: colors.text }, style]} {...rest} />;
+};
